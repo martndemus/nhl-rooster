@@ -8,9 +8,40 @@
 (function (window, undefined) {
     'use strict';
 
-    // groups: Initialize the empty namespace object callbacks, where all callback
-    // functions should get attached to.
-    window.callbacks = {};
+    /**
+     *  Adds eventlisteners to the DCL and onLoad event, calls the callback when one of them happens
+     *
+     *  @param {function} callback --- Function that needs to be called on the DCL event.
+     */
+    var onDocReady = function (callback) {
+        var loaded, ready, DOMContentLoaded;
+
+        // If loading is already done
+        if (document.readyState === 'complete') {
+            callback();
+            return;
+        }
+
+        // Before loaded, remove the domcontentloaded eventlistener
+        DOMContentLoaded = function () {
+            document.removeEventListener( 'DOMContentLoaded',DOMContentLoaded , false );
+            loaded();
+        };
+
+        // On loaded do callback.
+        loaded = function () {
+            if (!ready) {
+                callback();
+                ready = true;
+            }
+        };
+
+        // If DOMContentLoaded event is available
+        document.addEventListener( 'DOMContentLoaded', DOMContentLoaded , false );
+
+        // Else fall back on load event
+        window.addEventListener('load', loaded, false);
+    };
 
     /**
      *  Array with objects containing data about a class of students.
@@ -26,6 +57,102 @@
      */
     var groups = [
         {
+            'id':         '#SPLUS630532',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE1A'
+        },
+        {
+            'id':         '#SPLUS630533',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE1B'
+        },
+        {
+            'id':         '#SPLUS811D13',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE1C'
+        },
+        {
+            'id':         '#SPLUS8182BA',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE1D'
+        },
+        {
+            'id':         '#SPLUSDDDCD9',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE2A'
+        },
+        {
+            'id':         '#SPLUSDDDCD8',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE2B'
+        },
+        {
+            'id':         '#SPLUS9521DE',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE3A'
+        },
+        {
+            'id':         '#SPLUS02D2BA',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE3B'
+        },
+        {
+            'id':         '#SPLUS5AEF90',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE3C'
+        },
+        {
+            'id':         '#SPLUS90442F',
+            'department': 'Economie & Management',
+            'study':      'Bedrijfseconomie',
+            'class':      'BE4'
+        },
+        {
+            'id':         '#SPLUSA4982C',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E1A'
+        },
+        {
+            'id':         '#SPLUSA4982F',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E1B'
+        },
+        {
+            'id':         '#SPLUSA49830',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E2A'
+        },
+        {
+            'id':         '#SPLUSF358F3',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E2B'
+        },
+        {
+            'id':         '#SPLUSA49831',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E4A'
+        },
+        {
+            'id':         '#SPLUSA49835',
+            'department': 'Engineering',
+            'study':      'Electrotechniek',
+            'class':      'E4I'
+        },
+        {
             'id':         '#SPLUSAE22C3',
             'department': 'Engineering',
             'study':      'Informatica',
@@ -36,260 +163,522 @@
             'department': 'Engineering',
             'study':      'Informatica',
             'class':      'I1B'
+        },
+        {
+            'id':         '#SPLUSA49838',
+            'department': 'Engineering',
+            'study':      'Informatica',
+            'class':      'I2A'
+        },
+        {
+            'id':         '#SPLUSDD7557',
+            'department': 'Engineering',
+            'study':      'Informatica',
+            'class':      'I2B'
+        },
+        {
+            'id':         '#SPLUSA49839',
+            'department': 'Engineering',
+            'study':      'Informatica',
+            'class':      'I3'
+        },
+        {
+            'id':         '#SPLUSA4983A',
+            'department': 'Engineering',
+            'study':      'Informatica',
+            'class':      'I4A'
+        },
+        {
+            'id':         '#SPLUSF358F4',
+            'department': 'Engineering',
+            'study':      'Informatica',
+            'class':      'I4B'
         }
     ];
 
-    // Put all constant values in their own namespace object
-    var constants = {
+    /*
+     *  Constant variable namespace
+     *
+     *  @namespace Holds all constant values
+     */
+    var Constants = {};
 
-        // Unix timestamp of the start of the current schoolyear
-        'yearstart': 1314576000000,
+    // Unix timestamp of the start of the current schoolyear
+    Constants.yearstart = 1314576000000;
 
-        // Length of a single week in ms
-        'weeklength': 604800000,
+    // Length of a single week in ms
+    Constants.weeklength = 604800000;
 
-        // Array of chars in range a-z
-        'chars': 'abcdefghijklmnopqrstuvwxyz'.split('')
-    }
+    // MS between Monday 00:00 am, Friday 00:00 am
+    Constants.dayLength = 86400000;
 
-    // Put all generic helper functions into it's own namespace object
-    var helpers = {
-        /**
-         *  dateToWeekNumber: Converts a Date object to a nth weeknumber according to the schoolyear.
-         *
-         *  @param {Date} date --- A Date object that needs to be converted to a weeknumber.
-         *  @return {int} --- The nth weeknumber from the start of the schoolyear.
-         */
-        'dateToWeekNumber': function(date) {
-            return Math.ceil((date.getTime() - constants.yearstart + 1) / constants.weeklength);
-        },
+    // Array of chars in range a-z
+    Constants.chars = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
-        /**
-         *  gen8CharStr: Creates a string of 8 randomly selected characters from the alphabet.
-         *
-         *  @return {string} --- A string of 8 random selected characters from range a-z.
-         */
-        'gen8CharStr': function() {
-            var i,
-                ret = '';
+    // Days of the week in an array
+    Constants.days = 'Zondag;Maandag;Dinsdag;Woensdag;Donderdag;Vrijdag;Zaterdag'.split(';');
 
-            for (i = 0; i < 8; i++) {
-                ret += constants.chars[Math.floor(Math.random() * 26)];
-            }
+    // Months of the year in an array
+    Constants.months = 'Januari;Februari;Maart;April;Mei;Juni;Juli;Augustus;September;Oktober;November;December'.split(';');
 
-            return ret;
-        },
-
-
-        /**
-         *  Returns an url encoded string with a YQL query url to the NHL rooster db.
-         *
-         *  @param {string} id --- Id of the callback function
-         *  @param {string} group --- Object with data about the group the roster is queried for.
-         *  @param {int} week --- Weeknumber for the roster to get.
-         *  @return {string} --- Url encoded string with YQL query url.
-         */
-         'buildYQLstring': function(id, group, week) {
-            return 'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20' +
-                   "url%3D'http%3A%2F%2Fwebrooster.nhl.nl%2F" + 'Reporting%2FTextspreadsheet%3B' +
-                   'Student%2Bset%2Bgroups%3Bid%3B' + group.id.replace('#', '%2523') +
-                   '%3Ftemplate%3Dtabelrooster%2Bstudentensetgroepen%26weeks%3D' + week +
-                   "'&format=json&callback=callbacks." + id;
-         }
-    }
+    /*
+     *  Utility function namespace
+     *
+     *  @namespace Holds all utility functions in a single namespace
+     */
+    var Utils = {};
 
     /**
-     *  JSONPcall: Makes an JSONP request and returns a callback function that should get called by
-     *  the callback of the JSONP request, when that function gets called, it in turn calls another
-     *  callback and supplies the data to it.
+     *  dateToWeekNumber: Converts a Date object to a nth weeknumber according to the schoolyear.
      *
-     *  @param {string} request --- the url of the JSONP request.
-     *  @param {function} callback --- A function that processes the data from the JSONP request
-     *  @return {function} --- The function that gets called when the JSONP request if fullfilled
+     *  @param {Date} date --- A Date object that needs to be converted to a weeknumber.
+     *  @return {int} --- The nth weeknumber from the start of the schoolyear.
      */
-    var JSONPGetRoster = function(group, week, callback) {
-        var id, script;
-
-        id = helpers.gen8CharStr();
-
-        script = document.createElement('script');
-        script.id = id;
-        script.type = 'text/javascript';
-        script.src = helpers.buildYQLstring(id, group, week);
-
-        document.body.appendChild(script);
-
-        window.callbacks[id] = function(data) {
-            if (data) {
-                callback(data);
-            }
-
-            document.body.removeChild(script);
-        };
+    Utils.dateToWeekNumber = function(date) {
+        return Math.ceil((date.getTime() - Constants.yearstart + 1) / Constants.weeklength);
     };
 
     /**
-     *  Lesson: Creates an lesson object, which contains data about a lesson.
+     *  Returns an url encoded string with a YQL query url to the NHL rooster db.
      *
-     *  @param {object} lesson --- A raw yql part with data about a single lesson.
-     *  @method {string} name   --- Returns the name of the lesson.
-     *  @method {string} start  --- Returns starting time of the lesson.
-     *  @method {string} duration --- Returns the length in time of the lesson.
-     *  @method {string} teacher --- Returns the teacher of that lesson.
-     *  @method {string} classroom --- Returns the classroom id of the lesson.
-     *  @method {string} note --- Returns the optional note of the lesson.
+     *  @param {string} group --- Object with data about the group the roster is queried for.
+     *  @param {int} week --- Weeknumber for the roster to get.
+     *  @return {string} --- Url encoded string with YQL query url.
      */
+     Utils.buildYQLstring = function(group, week) {
+        return 'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20' +
+               "url%3D'http%3A%2F%2Fwebrooster.nhl.nl%2F" + 'Reporting%2FTextspreadsheet%3B' +
+               'Student%2Bset%2Bgroups%3Bid%3B' + group.id.replace('#', '%2523') +
+               '%3Ftemplate%3Dtabelrooster%2Bstudentensetgroepen%26weeks%3D' + week +
+               "%26days%3D1%3B2%3B3%3B4%3B5'&format=json&callback=";
+     };
 
-    var Lesson = function (lesson) {
-        if (!lesson) {
-            return false;
+     /*
+      * Function that takes a Date object and formats that into a string with the given format.
+      *
+      * @param {Date} date --- A date object that needs formatting
+      * @param {string} format --- A string with information about how the date should be formatted
+      * @returns {string} --- A string with a formatted date.
+      *
+      * @example: These are the symbols available for formatting:
+      *     %a: The abbreviated weekday name.
+      *     %A: The  full  weekday  name.
+      *     %b: The abbreviated month name.
+      *     %B: The  full  month  name.
+      *     %d: Day of the month.
+      *     %y: Year without a century.
+      *     %Y: Year with century.
+      *
+      *     Example: '%a %d %B, %Y' woudl turn into 'Mon 05 January, 2012'
+      */
+
+    // format: see http://liquid.rubyforge.org/classes/Liquid/StandardFilters.html#M000012
+    Utils.formatDate = function(date, format) {
+
+        // Return empty string when no date is given.
+        if (!date) {
+            return '';
         }
 
-        this.name = function() {
-            return lesson.td[0].p;
-        };
+        // Set default for format, if format is not set.
+        format = format || '%a %d %B, %Y';
 
-        this.start = function() {
-            return lesson.td[1].p;
-        };
-
-        this.duration = function() {
-            return lesson.td[2].p;
-        };
-
-        this.teacher = function() {
-            return lesson.td[3].p;
-        };
-
-        this.classroom = function() {
-            return lesson.td[4].p;
-        };
-
-        this.note = function() {
-            return lesson.td[6].p;
-        };
-    };
-
-    /**
-     *  WeekDay: Curries out a function with a set name of the day.
-     *
-     *  @param {string} dayName --- name of the function that the function will use.
-     *  @return {function} --- this function initializes a day object with a preset day name.
-     */
-    var WeekDay = function (dayName) {
-        /**
-         *  Initializes a day object that holds information about the schedule of a day
-         *
-         *  @param {object} dayObj --- A raw yql object that contains information about the schedule
-         *      of a single day.
-         *  @method {string} name --- Returns the name of the day this object belongs to.
-         *  @property {Lesson} 0.. --- Each numbered property references a Lesson object.
-         *  @property {int} length --- The amount of Lesson objects this references to.
-         */
-       return function(dayObj) {
-            var i;
-
-            this.name = function() {
-                return dayName;
-            };
-
-            if (!dayObj.tr) {
-                this.length = 0;
-                return;
+        return format.replace(/%[a-z]/ig, function(str) {
+            switch (str) {
+                case '%a':
+                    return Constants.days[date.getDay()].substring(0,2);
+                case '%A':
+                    return Constants.days[date.getDay()];
+                case '%b':
+                    return Constants.months[date.getMonth()].substring(0,3);
+                case '%B':
+                    return Constants.months[date.getMonth()];
+                case '%d':
+                    return date.getDate().toString().replace(/^[\d]$/, '0$&');
+                case '%y':
+                    return date.getFullYear().toString().substr(-2);
+                case '%Y':
+                    return date.getFullYear();
+                default:
+                    return '';
             }
-
-            for (i = 1; i < dayObj.tr.length; i++) {
-                this[i-1] = new Lesson(dayObj.tr[i]);
-            }
-
-            this.length = --i;
-        };
+        });
     };
 
-    // Create a WeekDay for each day of the week.
-    var Monday = WeekDay('Maandag'),
-        Tuesday = WeekDay('Dinsdag'),
-        Wednesday = WeekDay('Woensdag'),
-        Thursday = WeekDay('Donderdag'),
-        Friday = WeekDay('Vrijdag');
-
-    /**
-     *  Initializes a WeekRoster object that information about a roster for a specific week for a
-     *  specific group/study.
+    /*
+     * Adds up n amount of days to the given Date object
      *
-     *  @param {object} data --- Raw yql data object that contains information about the weekroster.
-     *  @property {weekDay} monday .. friday -- References to a WeekDay object that contains
-     *      roster information about that day of the week.
+     * @param {Date} date --- A date object.
+     * @param {number} n --- The amount of days to add, can be negative.
+     * @returns {Date} --- A date object with n days added.
      */
-    var WeekRoster = function(data) {
-        var days;
-
-        if (!data) {
-            return false;
-        }
-
-        days = data.query.results.body.table.splice(1,5);
-
-        this.monday = new Monday(days[0]);
-        this.tuesday = new Tuesday(days[1]);
-        this.wednesday = new Wednesday(days[2]);
-        this.thursday = new Thursday(days[3]);
-        this.friday = new Friday(days[4]);
+    Utils.addDays = function(date, n) {
+        return new Date(date.getTime() + (Constants.dayLength * n));
     };
 
-    WeekRoster.prototype.buildSequentialHTML = function () {
-        var html;
+    /*
+     *
+     */
+    Utils.parseTime = function(timestring) {
+        var time;
 
-        var buildLesson = function(lesson) {
-            var html;
+        // Split the timestring into an array
+        timestring = timestring.split(':');
 
-            html = '<p>' + lesson.start() + ' ' + lesson.name() + ' ' + lesson.classroom() + '</p>';
+        // Progressively add the hours, minutes, etc if they exist and are parseable.
+        if (timestring[0] && typeof(parseInt(timestring[0])) === 'number' ) {
+            time = parseInt(timestring[0]) * 60 * 60 * 1000;
 
-            return html;
+            if (timestring[1] && typeof(parseInt(timestring[1])) === 'number' ) {
+                time += parseInt(timestring[1]) * 60 * 1000;
 
-        };
-
-        var buildDay = function(day) {
-            var i, html;
-
-            html = '<div class=day><h4>' + day.name() + '</h4>';
-
-            if (day.length > 0) {
-                for (i = 0; i < day.length; i++) {
-                    html += buildLesson(day[i]);
+                if (timestring[2] && typeof(parseInt(timestring[2])) === 'number') {
+                    time += parseInt(timestring[2]) * 1000;
                 }
             }
-            else {
-                html += '<p>Geen lessen</p>'
-            }
+        }
 
-            return html + '</div>';
-        };
-
-        html = buildDay(this.monday) +
-               buildDay(this.tuesday) +
-               buildDay(this.wednesday) +
-               buildDay(this.thursday) +
-               buildDay(this.friday);
-
-       return html;
+        return time;
     };
 
-    JSONPGetRoster(groups[1], 24, function (data) {
-        var roster = new WeekRoster(data);
-        document.getElementById('rooster').innerHTML = roster.buildSequentialHTML();
-    })
+    /*
+     *  Prepends a zero if a single digit number is given.
+     *
+     *  @param {string|number} time -- A number represented as string or number.
+     *  @returns {string} --- The given time padded with a zero if needed.
+     */
+    Utils.padZero = function(time) {
+        // Just concat a 0 before the given time if it a string with length 1.
+        if (typeof(time) === 'string' && time.length === 1) {
+           return '0' + time;
+        }
 
+        // If its a time and < 10 then pad a concat a zero befor it.
+        if (typeof(time) === 'number' && time < 10) {
+            return '0' + time;
+        }
+
+        // Return unchanged int if none of the above applies.
+        return time;
+    };
+
+    /*
+     *  Formats given date object into a ISO8601 formatted string.
+     *
+     *  @param {Date} date --- A Date object.
+     *  @returns {string} --- The given date as a ISO8601 formatted string.
+     *  @see https://en.wikipedia.org/wiki/Iso8601
+     */
+    Utils.formatISO8601 = function(date) {
+        return date.getFullYear() + '-' +
+            Utils.padZero(date.getMonth() + 1) + '-' +
+            Utils.padZero(date.getDate()) + 'T' +
+            Utils.padZero(date.getHours()) + ':' +
+            Utils.padZero(date.getMinutes()) + ':' +
+            Utils.padZero(date.getSeconds()) + '+' +
+            Utils.padZero(date.getTimezoneOffset() / 60 * -1) + ':00';
+    };
+
+    /**
+     *  Gets roster data trough the YQL api, passes the roster data to the callback.
+     *
+     *  @param {object} group --- Group object with data about the group
+     *  @param {int} week --- Week number of the roster to get
+     *  @param {function} callback --- Function that gets the retrieved data passed as param.
+     */
+    var XHRGetRoster = function(group, week, callback) {
+        var xhr;
+
+        // Create XHR
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', Utils.buildYQLstring(group, week));
+
+        // Attach eventlistener and callback.
+        xhr.addEventListener('readystatechange', function(){
+            if (xhr.readyState === 4) {
+                var data = JSON.parse(xhr.responseText);
+                callback(data);
+            }
+        });
+
+        // Send request
+        xhr.send();
+    };
+
+
+    /**
+     *  The roster object,
+     */
+    var Roster = function (data, type) {
+        // If data type === raw, preprocess the data.
+        if (type === 'raw') {
+            data = function(data) {
+                // Check if data actually contains something usefull, else return false
+                if (!(data && data.query && data.query.results !== null)) {
+                    return false;
+                }
+
+                // Pick the raw day object out of the data as an array.
+                var days = data.query.results.body.table.splice(1,5),
+
+                // Parse the start and end date of the week out of the data.
+                startEndDate = function(string) {
+                    // Strip words we don't need & split into array.
+                    string = string.replace(/(Periode\:|tot)/gi,'');
+                    string = string.split('  ');
+                    // Parse the strings into date objects.
+                    string[0] = Date.parse(string[0]);
+                    string[1] = Date.parse(string[1]);
+                    string[0] = new Date(string[0]);
+                    string[1] = new Date(string[1]);
+
+                    return string;
+                }(data.query.results.body.table[0].tr[1].td.table.tr.td[0].p);
+
+
+                var transformLesson = function (rawLesson, date) {
+                    var lesson;
+
+                    // Return empty object if there is no data.
+                    if (!(rawLesson && rawLesson.td)) {
+                        return {};
+                    }
+
+                    lesson = {
+                        'name':      rawLesson.td[0].p,
+                        'start':     rawLesson.td[1].p,
+                        'duration':  rawLesson.td[2].p,
+                        'teacher':   rawLesson.td[3].p,
+                        'classroom': rawLesson.td[4].p,
+                        'note':      rawLesson.td[6].p
+                    };
+
+                    lesson.start = new Date(date.getTime() + Utils.parseTime(lesson.start));
+                    lesson.duration = Utils.parseTime(lesson.duration);
+                    lesson.end = new Date(lesson.start.getTime() + lesson.duration);
+
+                    return lesson;
+                };
+
+                var transformDay = function (rawDay, date) {
+                    var i, day;
+
+                    // Init day as object
+                    day = {
+                        'date': date,
+                        'dayNumber': date.getDay(),
+                        'lessons': []
+                    };
+
+                    // Return empty array if there is no data.
+                    if (!(rawDay && rawDay.tr)) {
+                        return day;
+                    }
+
+                    // Pass lesson data to transformLesson, push returned object to day.
+                    for (i = 1; i < rawDay.tr.length; i++) {
+                        day.lessons.push(transformLesson(rawDay.tr[i], date));
+                    }
+
+                    return day;
+                };
+
+                // Transform all data in to a nice object.
+                data = {
+                    'created': new Date(data.query.created),
+                    'weekStart': startEndDate[0],
+                    'weekEnd': Utils.addDays(startEndDate[1], -2)
+                };
+
+                data.Monday = transformDay(days[0], data.weekStart);
+                data.Tuesday = transformDay(days[1], Utils.addDays(data.weekStart, 1));
+                data.Wednesday = transformDay(days[2], Utils.addDays(data.weekStart, 2));
+                data.Thursday = transformDay(days[3], Utils.addDays(data.weekStart, 3));
+                data.Friday = transformDay(days[4], Utils.addDays(data.weekStart, 4));
+
+                return data;
+
+            }(data);
+        }
+
+        var Roster = function () {};
+
+        Roster.prototype.JSON = function () {
+            return data;
+        };
+
+        Roster.prototype.stringify = function () {
+            return JSON.stringify(data);
+        };
+
+        Roster.prototype.toHTML = function () {
+            var html;
+
+            var buildLessonHTML = function (lesson) {
+                var html;
+
+                html = '<article class="lesson"><div>';
+
+                if (lesson.name) {
+                    html += '<span>' + lesson.name + '</span>';
+
+                    if (lesson.start && lesson.end) {
+                        console.dir(lesson.start);
+                        html += '<span class=time>';
+                        html += '<time class="dtstart" datetime="' + Utils.formatISO8601(lesson.start) + '">';
+                        html += lesson.start.getHours() + ':' + Utils.padZero(lesson.start.getMinutes());
+                        html += '</time> - ';
+                        html += '<time class="dtend" datetime="' + Utils.formatISO8601(lesson.end) + '">';
+                        html += lesson.end.getHours() + ':' + Utils.padZero(lesson.end.getMinutes());
+                        html += '</time></span>';
+                    }
+
+                    html += '</div><div>';
+
+                    if (lesson.classroom) {
+                        html += '<span class="classroom">' + lesson.classroom + '</span>';
+                    }
+
+                    if (lesson.start && lesson.end) {
+                        html += '<span class=addcalender>+ Kalender<span>';
+                    }
+                }
+
+                html += '</div></article>';
+
+                return html;
+            };
+
+            var buildDayHTML = function (day) {
+                var i, dayElement;
+
+                dayElement = document.createElement('article');
+                dayElement.className = 'day';
+                dayElement.innerHTML = '<h3>' + Constants.days[day.dayNumber] + '</h3>';
+
+                if (day.lessons && day.lessons.length > 0) {
+                    for (i = 0; i < day.lessons.length; i++) {
+                        dayElement.innerHTML += buildLessonHTML(day.lessons[i]);
+                    }
+                }
+                else {
+                    dayElement.innerHTML += buildLessonHTML({'name':'Geen lessen'});
+                }
+
+
+
+                return dayElement.outerHTML;
+            };
+
+            html  = buildDayHTML(data.Monday);
+            html += buildDayHTML(data.Tuesday);
+            html += buildDayHTML(data.Wednesday);
+            html += buildDayHTML(data.Thursday);
+            html += buildDayHTML(data.Friday);
+
+            return html;
+        };
+
+        return new Roster();
+    };
+
+    /**
+     *  Looks up all unique departments in groups and inserts them as options in the department selector
+     */
+    var insertDepartments = function () {
+        var i, p, container, departments, option;
+
+        // Create reference to department selector containter.
+        container = document.getElementById('department');
+
+        // Find all unique departments
+        departments = [];
+
+        for (i = 0, p = -1; i < groups.length; i++) {
+            if (groups[i].department !== departments[p]) {
+                departments[++p] = groups[i].department;
+            }
+        }
+
+        // Sort the departments alphabetically
+        departments.sort();
+
+        // Insert the departments into the container
+        for (i = 0; i <= p; i++) {
+            option = document.createElement('option');
+            option.innerHTML = departments[i];
+            container.appendChild(option);
+        }
+    };
+
+    var insertClasses = function (department) {
+        var i, container, global, classes, option;
+
+        // Create reference to class-name selector container
+        container = document.getElementById('class-name');
+
+        // If department is not set, set bool to insert all classes
+        if (!department) {
+            global = true;
+        }
+
+        classes = [];
+        for (i = 0; i < groups.length; i++) {
+            // Skip if group is not in department.
+            if (global === undefined && groups[i].department !== department) {
+                continue;
+            }
+
+            classes.push(groups[i]);
+        }
+
+        classes.sort(function(a,b) {
+            return a.study - b.study;
+        });
+
+        for (i = 0; i < classes.length; i++) {
+            option = document.createElement('option');
+            option.value = classes[i].id;
+            option.innerHTML = classes[i].study + ' - ' + classes[i]['class'];
+            container.appendChild(option);
+        }
+    };
+
+    var insertWeeks = function () {
+        var i, container, option, thisWeek, weekStart, weekEnd, weekNumber;
+
+        // Create reference to week selector container
+        container = document.getElementById('week');
+
+        thisWeek = Utils.dateToWeekNumber(new Date());
+
+        for (i = -10; i <= 10; i++) {
+            weekStart = Constants.yearstart + ((thisWeek + i - 1) * Constants.weeklength);
+            weekNumber = Utils.dateToWeekNumber(new Date(weekStart));
+
+            option = document.createElement('option');
+            option.value = weekNumber;
+            option.innerHTML = Utils.formatDate(new Date(weekStart), '%d %B, %Y');
+
+            if (weekNumber === thisWeek) {
+                option.selected = true;
+            }
+
+            container.appendChild(option);
+        }
+    };
+
+    XHRGetRoster(groups[17], 24, function (data) {
+        var roster = Roster(data, 'raw');
+        console.log(roster.stringify());
+        document.getElementById('rooster').innerHTML = roster.toHTML();
+    });
+
+    onDocReady(function () {
+        insertDepartments();
+        insertClasses();
+        insertWeeks();
+
+    });
 
 }(window));
-
-
-
-//    var getRoster = function(group, week) {
-//        var yql, request;
-
-//        yql = "select%20*%20from%20html%20where%20url%3D'" + encodeURIComponent('http://webrooster.nhl.nl/Reporting/Textspreadsheet;Student+set+groups;id;' +    encodeURIComponent(group.id) + '?template=tabelrooster+studentensetgroepen&weeks=' + week) + "'&format=json&callback=loggit";
-
-//        request = document.createElement('script');
-//        request.src = 'http://query.yahooapis.com/v1/public/yql?q=' + yql;
-//    };
