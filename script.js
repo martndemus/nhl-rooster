@@ -238,41 +238,24 @@
         return Math.ceil((date.getTime() - Constants.yearstart + 1) / Constants.weeklength);
     };
 
-    /**
-     *  Returns an url encoded string with a YQL query url to the NHL rooster db.
+    /*
+     * Function that takes a Date object and formats that into a string with the given format.
      *
-     *  @param {string} group --- Object with data about the group the roster is queried for.
-     *  @param {int} week --- Weeknumber for the roster to get.
-     *  @return {string} --- Url encoded string with YQL query url.
+     * @param {Date} date --- A date object that needs formatting
+     * @param {string} format --- A string with information about how the date should be formatted
+     * @returns {string} --- A string with a formatted date.
+     *
+     * @example: These are the symbols available for formatting:
+     *     %a: The abbreviated weekday name.
+     *     %A: The  full  weekday  name.
+     *     %b: The abbreviated month name.
+     *     %B: The  full  month  name.
+     *     %d: Day of the month.
+     *     %y: Year without a century.
+     *     %Y: Year with century.
+     *
+     *     Example: '%a %d %B, %Y' woudl turn into 'Mon 05 January, 2012'
      */
-     Utils.buildYQLstring = function(group, week) {
-        return 'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20' +
-               "url%3D'http%3A%2F%2Fwebrooster.nhl.nl%2F" + 'Reporting%2FTextspreadsheet%3B' +
-               'Student%2Bset%2Bgroups%3Bid%3B' + group.id.replace('#', '%2523') +
-               '%3Ftemplate%3Dtabelrooster%2Bstudentensetgroepen%26weeks%3D' + week +
-               "%26days%3D1%3B2%3B3%3B4%3B5'&format=json&callback=";
-     };
-
-     /*
-      * Function that takes a Date object and formats that into a string with the given format.
-      *
-      * @param {Date} date --- A date object that needs formatting
-      * @param {string} format --- A string with information about how the date should be formatted
-      * @returns {string} --- A string with a formatted date.
-      *
-      * @example: These are the symbols available for formatting:
-      *     %a: The abbreviated weekday name.
-      *     %A: The  full  weekday  name.
-      *     %b: The abbreviated month name.
-      *     %B: The  full  month  name.
-      *     %d: Day of the month.
-      *     %y: Year without a century.
-      *     %Y: Year with century.
-      *
-      *     Example: '%a %d %B, %Y' woudl turn into 'Mon 05 January, 2012'
-      */
-
-    // format: see http://liquid.rubyforge.org/classes/Liquid/StandardFilters.html#M000012
     Utils.formatDate = function(date, format) {
 
         // Return empty string when no date is given.
@@ -380,31 +363,70 @@
     };
 
     /**
-     *  Gets roster data trough the YQL api, passes the roster data to the callback.
+     *  YQL namespace for creating YQL query strings
      *
-     *  @param {object} group --- Group object with data about the group
-     *  @param {int} week --- Week number of the roster to get
-     *  @param {function} callback --- Function that gets the retrieved data passed as param.
+     *  All function returns an url encoded string with a YQL query url to a part the NHL rooster db.
+     *  @namespace Holds all the YQL query string create functions.
      */
-    var XHRGetRoster = function(group, week, callback) {
-        var xhr;
+    var YQL = {};
 
-        // Create XHR
-        xhr = new XMLHttpRequest();
-        xhr.open('GET', Utils.buildYQLstring(group, week));
-
-        // Attach eventlistener and callback.
-        xhr.addEventListener('readystatechange', function(){
-            if (xhr.readyState === 4) {
-                var data = JSON.parse(xhr.responseText);
-                callback(data);
-            }
-        });
-
-        // Send request
-        xhr.send();
+    /**
+     *  Creates YQL query string for student rosters.
+     *
+     *  @param {string} group --- Object with data about the group the roster is queried for.
+     *  @param {int} week --- Weeknumber for the roster to get.
+     *  @return {string} --- Url encoded string with YQL query url.
+     */
+    YQL.studentString = function(group, week) {
+        return 'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20' +
+               "url%3D'http%3A%2F%2Fwebrooster.nhl.nl%2F" + 'Reporting%2FTextspreadsheet%3B' +
+               'Student%2Bset%2Bgroups%3Bid%3B' + group.id.replace('#', '%2523') +
+               '%3Ftemplate%3Dtabelrooster%2Bstudentensetgroepen%26weeks%3D' + week +
+               "%26days%3D1%3B2%3B3%3B4%3B5'&format=json&callback=";
     };
 
+    /**
+     *  XHR object, the base function does not do anything on it's own, it only initilizes a few common things
+     */
+    var XHR = function() {
+        // Create a new XHR.
+        var xhr = new XMLHttpRequest();
+
+        /**
+         *  Sets a callback on the readystate = 4 event. Passes the responseText
+         *  to the callback function. If the responseText is JSON, it get's parsed.
+         *
+         *  @param {function} callback --- The callback to call.
+         */
+        var setCallback = function(callback) {
+            xhr.addEventListener('readystatechange', function() {
+                if (xhr.readyState === 4 && callback) {
+                    var response;
+
+                    // Try to convert the responseText from JSON to an Object.
+                    try {
+                        response = JSON.parse(xhr.responseText);
+                    }
+                    catch (e) {
+                        response = xhr.responseText;
+                    }
+
+                    callback(response);
+                }
+            });
+        };
+
+        // Empty constructor.
+        var XHR = function() {};
+
+        XHR.prototype.getStudentRoster = function(group, week, callback) {
+            xhr.open('GET', YQL.studentString(group, week));
+            setCallback(callback);
+            xhr.send();
+        };
+
+        return new XHR();
+    }
 
     /**
      *  The roster object,
@@ -668,7 +690,7 @@
         }
     };
 
-    XHRGetRoster(groups[17], 24, function (data) {
+    XHR().getStudentRoster(groups[17], 24, function (data) {
         var roster = Roster(data, 'raw');
         console.log(roster.stringify());
         document.getElementById('rooster').innerHTML = roster.toHTML();
@@ -678,7 +700,6 @@
         insertDepartments();
         insertClasses();
         insertWeeks();
-
     });
 
 }(window));
