@@ -15,26 +15,34 @@
     <header>
         <h1>NHL Roosters</h1>
     </header>
+    <div id=test>
+    </div>
     <div id=wrap role=main>
         <nav id=topnav>
             <button id=extra-opts >Instellingen</button>
             <span class=legend>Soort rooster:</span>
             <button class=active>Klassen</button>
-            <button>Leraren</button>
-            <button>Tentamens</button>
+            <button class=disabled><!--Leraren--></button>
+            <button class=disabled><!--Tentamens--></button>
         </nav>
         <fieldset id=options>
             <label for=department>Afdeling:</label>
             <div class=select-outline>
-                <select id=department></select>
+                <select id=department>
+                    <option value=0>Selecteer een afdeling</option>
+                </select>
             </div>
             <label for=class-name>Klas:</label>
             <div class=select-outline>
-                <select id=class-name></select>
+                <select id=class-name>
+                    <option value=0>Selecteer een klas</option>
+                </select>
             </div>
             <label for=week>Week: <small>(begint)</small></label>
             <div class=select-outline>
-                <select id=week></select>
+                <select id=week>
+                    <option value=0>Selecteer een week</option>
+                </select>
             </div>
         </fieldset>
         <button id=showhide>Verberg</button>

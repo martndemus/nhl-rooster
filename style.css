@@ -115,6 +115,11 @@ a {
     background: url('diagstripe.png');
 }
 
+#topnav .disabled, #topnav .disabled:hover {
+    cursor: default;
+    background:none;
+}
+
 #topnav .legend {
     float:left;
     line-height: 40px;

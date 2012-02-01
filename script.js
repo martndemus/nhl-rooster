@@ -44,18 +44,27 @@
     };
 
     /**
-     *  Array with objects containing data about a class of students.
-     *  Each object represents one class of students.
+     *  NHL is an object with 3 arrays: groups, teachers & exams.
+     *  Each array contains objects with information about their subject.
      *
      *  @example:
+     *  Groups, Exams:
      *  {
      *      'id':         '#SPLUSAE22C3',    // ID string of the class of students
      *      'department': 'Engineering'      // The department the class belongs to
      *      'study':      'Informatica',     // Nice human readable name of the study
      *      'class':      'I1A'              // Specific class' label
      *  }
+     *  Teachers:
+     *  {
+     *      'id':         '#SPLUSD2E9FA',    // ID string of the teacher
+     *      'department': 'Engineering',     // Department where the teacher belongs to.
+     *      'name':       'Akkerman, H.'     // Name of the teacher.
+     *  }
      */
-    var groups = [
+    var NHL = {};
+
+    NHL.groups = [
         {
             'id':         '#SPLUS630532',
             'department': 'Economie & Management',
@@ -195,6 +204,10 @@
             'class':      'I4B'
         }
     ];
+
+    NHL.teachers = [];
+
+    NHL.exams = [];
 
     /*
      *  Constant variable namespace
@@ -377,10 +390,10 @@
      *  @param {int} week --- Weeknumber for the roster to get.
      *  @return {string} --- Url encoded string with YQL query url.
      */
-    YQL.studentString = function(group, week) {
+    YQL.studentString = function(id, week) {
         return 'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20' +
                "url%3D'http%3A%2F%2Fwebrooster.nhl.nl%2F" + 'Reporting%2FTextspreadsheet%3B' +
-               'Student%2Bset%2Bgroups%3Bid%3B' + group.id.replace('#', '%2523') +
+               'Student%2Bset%2Bgroups%3Bid%3B' + id.replace('#', '%2523') +
                '%3Ftemplate%3Dtabelrooster%2Bstudentensetgroepen%26weeks%3D' + week +
                "%26days%3D1%3B2%3B3%3B4%3B5'&format=json&callback=";
     };
@@ -419,8 +432,9 @@
         // Empty constructor.
         var XHR = function() {};
 
-        XHR.prototype.getStudentRoster = function(group, week, callback) {
-            xhr.open('GET', YQL.studentString(group, week));
+        //
+        XHR.prototype.getStudentRoster = function(id, week, callback) {
+            xhr.open('GET', YQL.studentString(id, week));
             setCallback(callback);
             xhr.send();
         };
@@ -545,7 +559,6 @@
                     html += '<span>' + lesson.name + '</span>';
 
                     if (lesson.start && lesson.end) {
-                        console.dir(lesson.start);
                         html += '<span class=time>';
                         html += '<time class="dtstart" datetime="' + Utils.formatISO8601(lesson.start) + '">';
                         html += lesson.start.getHours() + ':' + Utils.padZero(lesson.start.getMinutes());
@@ -603,22 +616,101 @@
 
         return new Roster();
     };
+    
+    var Rosters  = {};
+    
+    Rosters.insert = function(id, week) {
+        XHR().getStudentRoster(id, week, function (data) {
+            var roster = Roster(data, 'raw');
+            document.getElementById('rooster').innerHTML = roster.toHTML();
+        });
+    };
+
+    var Select = {};
+
+    // References to various select elements
+    Select.departmentsSelect = document.getElementById('department');
+    Select.classNameSelect = document.getElementById('class-name');
+    Select.weekSelect = document.getElementById('week');
+
+    Select.currentSelection = {
+        departments: '0',
+        classNames: '0',
+        weeks: '0'
+    };
+
+    Select.init = function () {
+        // Insert initial data
+        Select.insertDepartments(NHL.groups);
+        Select.insertClasses(NHL.groups);
+        Select.insertWeeks();
+
+        // Add event listeners
+        this.departmentsSelect.addEventListener('change', this.onSelect);
+        this.classNameSelect.addEventListener('change', this.onSelect);
+        this.weekSelect.addEventListener('change', this.onSelect);
+    };
+
+    Select.onSelect = function () {
+        var newSelection = {
+            departments: Select.departmentsSelect.children[Select.departmentsSelect.selectedIndex].value,
+            classNames: Select.classNameSelect.children[Select.classNameSelect.selectedIndex].value,
+            weeks: Select.weekSelect.children[Select.weekSelect.selectedIndex].value
+        }
+
+        if (newSelection.departments !== Select.currentSelection.departments) {
+            Select.clear(Select.classNameSelect);
+            Select.insertClasses(NHL.groups, newSelection.departments);
+        }
+        
+        if (newSelection.classNames !== Select.currentSelection.classNames && newSelection.weeks !== '0' ||
+        newSelection.weeks !== Select.currentSelection.weeks && newSelection.classNames !== '0') {
+            Rosters.insert(newSelection.classNames, newSelection.weeks);
+        }
+
+        Select.currentSelection = newSelection;
+    };
+
+    Select.insertOption = function (text, target, value, selected) {
+        var option;
+
+        option = document.createElement('option');
+
+        option.innerHTML = text;
+        if (value) {
+            option.value = value;
+        }
+
+        if (selected) {
+            option.selected = true;
+        }
+
+        target.appendChild(option);
+    };
+
+    Select.clear = function (target) {
+        var i;
+
+        for (i = --target.children.length; i > 0 ; i--) {
+            if (target.children[i].value !== '0') {
+                target.removeChild(target.children[i]);
+            }
+        }
+    };
 
     /**
      *  Looks up all unique departments in groups and inserts them as options in the department selector
      */
-    var insertDepartments = function () {
-        var i, p, container, departments, option;
+    Select.insertDepartments = function (list) {
+        var i, p, departments, option;
 
-        // Create reference to department selector containter.
-        container = document.getElementById('department');
 
         // Find all unique departments
         departments = [];
 
-        for (i = 0, p = -1; i < groups.length; i++) {
-            if (groups[i].department !== departments[p]) {
-                departments[++p] = groups[i].department;
+        for (i = 0, p = -1; i < NHL.groups.length; i++) {
+            if (list[i].department !== departments[p]) {
+                departments[++p] = list[i].department;
             }
         }
 
@@ -627,17 +719,12 @@
 
         // Insert the departments into the container
         for (i = 0; i <= p; i++) {
-            option = document.createElement('option');
-            option.innerHTML = departments[i];
-            container.appendChild(option);
+            Select.insertOption(departments[i], this.departmentsSelect);
         }
     };
 
-    var insertClasses = function (department) {
-        var i, container, global, classes, option;
-
-        // Create reference to class-name selector container
-        container = document.getElementById('class-name');
+    Select.insertClasses = function (list, department) {
+        var i, global, classes, option;
 
         // If department is not set, set bool to insert all classes
         if (!department) {
@@ -645,32 +732,22 @@
         }
 
         classes = [];
-        for (i = 0; i < groups.length; i++) {
+        for (i = 0; i < list.length; i++) {
             // Skip if group is not in department.
-            if (global === undefined && groups[i].department !== department) {
+            if (global === undefined && list[i].department !== department) {
                 continue;
             }
 
-            classes.push(groups[i]);
+            classes.push(list[i]);
         }
 
-        classes.sort(function(a,b) {
-            return a.study - b.study;
-        });
-
         for (i = 0; i < classes.length; i++) {
-            option = document.createElement('option');
-            option.value = classes[i].id;
-            option.innerHTML = classes[i].study + ' - ' + classes[i]['class'];
-            container.appendChild(option);
+            Select.insertOption(classes[i].study + ' - ' + classes[i]['class'], this.classNameSelect, classes[i].id);
         }
     };
 
-    var insertWeeks = function () {
-        var i, container, option, thisWeek, weekStart, weekEnd, weekNumber;
-
-        // Create reference to week selector container
-        container = document.getElementById('week');
+    Select.insertWeeks = function () {
+        var i, option, thisWeek, weekStart, weekEnd, weekNumber;
 
         thisWeek = Utils.dateToWeekNumber(new Date());
 
@@ -678,28 +755,18 @@
             weekStart = Constants.yearstart + ((thisWeek + i - 1) * Constants.weeklength);
             weekNumber = Utils.dateToWeekNumber(new Date(weekStart));
 
-            option = document.createElement('option');
-            option.value = weekNumber;
-            option.innerHTML = Utils.formatDate(new Date(weekStart), '%d %B, %Y');
-
             if (weekNumber === thisWeek) {
-                option.selected = true;
+                Select.insertOption(Utils.formatDate(new Date(weekStart), '%d %B, %Y'), this.weekSelect, weekNumber, true);
+            }
+            else {
+                Select.insertOption(Utils.formatDate(new Date(weekStart), '%d %B, %Y'), this.weekSelect, weekNumber);
             }
 
-            container.appendChild(option);
         }
-    };
-
-    XHR().getStudentRoster(groups[17], 24, function (data) {
-        var roster = Roster(data, 'raw');
-        console.log(roster.stringify());
-        document.getElementById('rooster').innerHTML = roster.toHTML();
-    });
+    };    
 
     onDocReady(function () {
-        insertDepartments();
-        insertClasses();
-        insertWeeks();
+        Select.init()
     });
 
 }(window));
